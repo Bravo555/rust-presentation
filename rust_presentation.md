@@ -26,8 +26,40 @@ zero cost
 
 ### Rich type system
 
+-   Algebraic Data Types
 -   Generics
 -   Traits
+
+![traits](img/traits.webp)
+
+**[We use rich type systems to design APIs that are flexible and simple, but most
+importantly, correct.](https://fasterthanli.me/articles/aiming-for-correctness-with-types)**
+
+#### I'm gonna say the M-word
+
+`Option`/`Result` types.
+
+#### Fixing a billion dollar mistake
+
+What do we usually use null pointers for in other languages?
+
+-   to allocate data on the stack
+-   to signify the presence/absence of a value
+
+These separate concerns are coupled, so it's not possible to express in the type
+system:
+
+-   An optional value that's on the stack
+-   A heap-allocated value that's non-optional, always valid
+
+**That's why Rust doesn't have null.**
+
+Short version: for optional values, we use `Option<T>`, for heap allocation, we
+use `Box<T>`. If we want an optinal heap-allocated value, use `Option<Box<T>>`,
+[which is optimized to use only as much memory as
+`Option<T>`](https://doc.rust-lang.org/std/option/#representation).
+
+#### Owned vs borrowed types
 
 ![strings](img/strings.jpg)
 
@@ -46,7 +78,7 @@ How to make sense of this?
 It's a common pattern that types in Rust are divided into "owned" types and
 "borrowed" types.
 
-#### Owned types
+Owned types:
 
 -   `String` - Owned, Rust native, UTF-8 encoded, explicitly sized string
 -   `CString` - Owned C-compatible null-terminated string
@@ -56,7 +88,7 @@ It's a common pattern that types in Rust are divided into "owned" types and
     to the platform (so on Unix separator is `/`, on Windows it's `\`, etc.)
 -   `Vec<u8>` - Owned vector of unsigned bytes
 
-#### Borrowed types
+Borrowed types:
 
 -   `&str`
 -   `&' static str`
@@ -70,6 +102,8 @@ It's a common pattern that types in Rust are divided into "owned" types and
 "But you told me borrowing in Rust is done with `&`, so why do some don't have
 that? Also, if to borrow we just add `&`, then why is borrowed string not just
 `&String`? What's the difference?"
+
+##### Strings
 
 To show the difference we'll look into just `&str` and `String`.
 
@@ -129,6 +163,10 @@ The following are analogous to `String` and `&str`:
 -   `OsString` and `OsStr`
 -   `PathBuf` and `Path`
 
+More about strings: https://fasterthanli.me/articles/working-with-strings-in-rust
+
+##### Vecs and slices
+
 What about `Vec<u8>`, `[u8; N]`, `&[u8; N]`, `&[u8]`?
 
 `Vec<u8>` and `[u8; N]` are arrays of `u8`; former is growable and
@@ -157,6 +195,10 @@ fn read_bytes(elements: &[u8])
 fn read_string(elements: &str)
 ```
 
+But dont overthink it for now:
+
+![API](img/api.webp)
+
 ### Big stdlib
 
 Rust stdlib has two stdlibs:
@@ -168,6 +210,13 @@ Rust stdlib has two stdlibs:
 
 ### Tooling (build system, package manager, rustfmt, clippy)
 
+## Learning Rust
+
+-   [Learn Rust in Y minutes](https://learnxinyminutes.com/docs/rust/)
+-   [I am a Java, C#, C or C++ developer, time to do some
+    Rust](https://fasterthanli.me/articles/i-am-a-java-csharp-c-or-cplusplus-dev-time-to-do-some-rust)
+-   [Rust Book](https://doc.rust-lang.org/book/)
+
 ## Tips
 
 -   Use clone
@@ -175,5 +224,7 @@ Rust stdlib has two stdlibs:
 ## Sources
 
 -   https://fasterthanli.me
+-   https://www.youtube.com/c/fasterthanlime
 -   https://www.youtube.com/c/JonGjengset
 -   https://pkolaczk.github.io
+-   https://www.reddit.com/r/rustjerk
