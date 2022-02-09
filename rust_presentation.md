@@ -70,6 +70,7 @@ simpler."
 unexpected consequences.**
 
 -   https://fasterthanli.me/articles/i-want-off-mr-golangs-wild-ride
+-   https://viralinstruction.com/posts/defense/
 
 also lol no generics
 
@@ -212,12 +213,74 @@ Rust stdlib has two stdlibs:
 
 ## Learning Rust
 
--   [Learn Rust in Y minutes](https://learnxinyminutes.com/docs/rust/)
+### How install?
+
+Use rustup.rs. It lets you install multiple versions of rust. Usually you'll use
+stable but sometimes you might want to use features that are still unstable and
+available only on nightly. Also clippy and rustfmt are parts of the toolchain.
+
+#### Linux
+
+Install via your package manager or https://rustup.rs/ if it's not in your
+distro's repositories. The website installer will automatically prompt you to
+install the stable toolchain. If you installed rustup via package manager,
+install stable toolchain: `rustup toolchain install stable`.
+
+#### Windows
+
+Install via https://rustup.rs. To use MSVC backend, which is recommended, you'll
+need to have installed either Visual Studio 2015+ C++ workload or VS C++ build
+tools standalone if you don't use visual studio.
+
+You can also use MinGW, but it won't be covered here.
+
+### IDE setup
+
+I personally recommend VS Code with rust-analyzer, but feel free to use
+something you're comfortable with if it's supported.
+
+List of Rust IDEs/plugis available at: https://areweideyet.com
+
+![](img/ides.png)
+
+#### VS Code + rust-analyzer ❤️
+
+What does rust-analyzer do?
+
+![](img/ra1.png)
+
+-   type hinitng
+-   autocomplete
+-   jump to declaration/definition
+-   Autoapply suggestions
+
+After you have Rust stable toolchain installed, just install the VS Code
+rust-analyzer extension. In case of difficulties, refer to the
+[manual](https://rust-analyzer.github.io/manual.html#vs-code).
+
+#### Troubleshooting
+
+The extension works if the root directory of Rust project is opened in VS Code
+(the folder that contains `Cargo.toml`). If you have opened a directory with
+multiple Rust projects, you'll have to manually specify paths for rust-analyzer.
+
+### Other good sources
+
 -   [I am a Java, C#, C or C++ developer, time to do some
     Rust](https://fasterthanli.me/articles/i-am-a-java-csharp-c-or-cplusplus-dev-time-to-do-some-rust)
+
+    Comprehensive introduction to Rust for developers of other Object Oriented
+    languages
+
+-   [Declarative memory
+    management](https://fasterthanli.me/articles/declarative-memory-management)
+
+    How Rust memory management differs from C or C++
+
+-   [Learn Rust in Y minutes](https://learnxinyminutes.com/docs/rust/)
 -   [Rust Book](https://doc.rust-lang.org/book/)
 
-## Tips
+## Other tips
 
 -   Use clone
 
