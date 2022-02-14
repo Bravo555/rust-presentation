@@ -1,13 +1,36 @@
-# Rust presentation
+---
+title:
+    - Rust Presentation
+author:
+    - Marcel Guzik
+theme:
+    - Frankfurt
+colortheme:
+    - beaver
+fontsize: 9pt
 
-## Why Rust
+pandoc-latex-fontsize:
+    - classes: [rust]
+      size: scriptsize
+    - classes: [plain]
+      size: scriptsize
+---
+
+# Why Rust
 
 -   **Both safe and performant. No tradeoffs.**
 
 -   Zero cost abstractions!
+
+    Really?
+
+    [Really!](https://pkolaczk.github.io/overhead-of-optional/)
+
 -   Both low-level and high-level
 
     Write mostly high-level code, go low-level when you need it!
+
+---
 
 -   Memory safety
 
@@ -15,22 +38,22 @@
 
     ![](img/memorysafety.jpg)
 
+---
+
 -   Good tooling and helpful compiler
 
-    ![](img/it_compiles_it_works.png)
+    ![](img/it_compiles_it_works.png){ width=50% }
+
+---
 
 Rust's focus on safety famously makes implementing classical data structures
 more difficult, eg. writing a linked list is challenging for a beginner.
 
 https://rust-unofficial.github.io/too-many-lists/
 
-Really?
+## Borrow checking
 
-[Really!](https://pkolaczk.github.io/overhead-of-optional/)
-
-### Borrow checking
-
-#### Move semantics
+### Move semantics
 
 Move semantics in Rust are better than in C++. Why?
 
@@ -44,20 +67,24 @@ In C++, the moved object is still accessible, but is "empty", you need to
 explicitly handle that case in the destructor, therefore move semantics are not
 zero cost
 
-### Rich type system
+## Rich type system
 
 -   Algebraic Data Types
 -   Generics
 -   Traits
 
-#### Traits
+### Traits
 
-![traits](img/traits.jpg)
+![traits](img/traits.jpg){ width=50% }
+
+---
 
 Traits are like interfaces from Java or Go, but better.
 
 -   https://softwareengineering.stackexchange.com/questions/247298/how-are-rust-traits-different-from-go-interfaces#247313
 -   https://stackoverflow.com/questions/69477460/is-rust-trait-the-same-as-java-interface
+
+---
 
 In short:
 
@@ -71,6 +98,8 @@ In short:
     // slow, less code size, uses Vtable
     fn dynamic_dispatch(arg: Box<dyn MyTrait>) { }
     ```
+
+---
 
 -   object definition / method implementation is decoupled (you implement in
     impl blocks)
@@ -108,11 +137,15 @@ In short:
     }
     ```
 
+---
+
 -   you can conditionally implement a trait for a type
 
     ```rust
     impl<T> Clone for Vec<T> where T: Clone {...}
     ```
+
+---
 
 -   associated types, fuctions, values
 
@@ -137,7 +170,9 @@ In short:
     }
     ```
 
-##### Most important standard library traits:
+---
+
+#### Most important standard library traits:
 
 -   Debug: Debug print formatting
 -   Copy (requires Clone): Types that can be implicitly and trivially copied via
@@ -147,6 +182,8 @@ In short:
 -   Sync: The type can be safely accessed via references from different threads.
     If `&T` is `Send`, then `Sync` is derived automatically
 
+---
+
 Comparing values:
 
 -   PartialEq: For types that have partial equality
@@ -154,6 +191,8 @@ Comparing values:
 -   PartialOrd: For types with partial ordering (type can be compared if its
     less, greater, or equal)
 -   Ord: For types with total ordering (can be sorted)
+
+---
 
 Also:
 
@@ -169,11 +208,13 @@ Also:
 
     Slices and string slices are not `Sized`, but the references to them are.
 
+---
+
 **[We use rich type systems to design APIs that are flexible and simple, but
 most importantly,
 correct.](https://fasterthanli.me/articles/aiming-for-correctness-with-types)**
 
-#### Algebraic data types
+## Algebraic data types
 
 What is algebraic data type?
 
@@ -188,6 +229,8 @@ We can combine types in two ways:
 
 In other languages, structs/classes are like a product type, but there is no
 proper sum type.
+
+---
 
 In Rust, enums are sum types. Enums can contain values.
 
@@ -226,6 +269,8 @@ match result {
 }
 ```
 
+---
+
 It is impossible to not error check in Rust, because you need to handle the
 error to access the success value:
 
@@ -234,7 +279,7 @@ let text: String = std::fs::read_to_string("file.txt");
 println!("{text}");
 ```
 
-```
+```plain
 error[E0308]: mismatched types
  --> examples/result.rs:2:24
   |
@@ -250,6 +295,8 @@ For more information about this error, try `rustc --explain E0308`.
 error: could not compile `rust-demo` due to previous error
 ```
 
+---
+
 To unwrap the value on success, but exit the program on failure, use `.unwrap()`
 or `.expect("your message")`.
 
@@ -260,16 +307,16 @@ println!("{text}");
 
 On failure (eg. when `file.txt` does not exist):
 
-```
+```plain
 thread 'main' panicked at 'called `Result::unwrap()` on an `Err` value: Os { code: 2, kind: NotFound, message: "No such file or directory" }', examples/result.rs:2:60
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 ```
 
-#### Generics
+## Generics
 
 Trait based generics
 
-#### Fixing a billion dollar mistake
+## Fixing a billion dollar mistake
 
 What do we usually use null pointers for in other languages?
 
@@ -282,6 +329,8 @@ system:
 -   An optional value that's on the heap
 -   A heap-allocated value that's non-optional, always valid
 
+---
+
 **That's why Rust doesn't have null.**
 
 Short version: for optional values, we use `Option<T>`, for heap allocation, we
@@ -289,7 +338,7 @@ use `Box<T>`. If we want an optinal heap-allocated value, use `Option<Box<T>>`,
 [which is optimized to use only as much memory as
 `Option<T>`](https://doc.rust-lang.org/std/option/#representation).
 
-#### Owned vs borrowed types
+## Owned vs borrowed types
 
 ![strings](img/strings.jpg)
 
@@ -304,10 +353,14 @@ unexpected consequences.**
 
 also lol no generics
 
+---
+
 How to make sense of this?
 
 It's a common pattern that types in Rust are divided into "owned" types and
 "borrowed" types.
+
+---
 
 Owned types:
 
@@ -318,6 +371,8 @@ Owned types:
 -   `PathBuf` - Wrapper around `OsString`, with logic to manage path according
     to the platform (so on Unix separator is `/`, on Windows it's `\`, etc.)
 -   `Vec<u8>` - Owned vector of unsigned bytes
+
+---
 
 Borrowed types:
 
@@ -330,11 +385,13 @@ Borrowed types:
 -   `&[u8; N]`
 -   `&u8`
 
+---
+
 "But you told me borrowing in Rust is done with `&`, so why do some don't have
 that? Also, if to borrow we just add `&`, then why is borrowed string not just
 `&String`? What's the difference?"
 
-##### Strings
+### Strings
 
 To show the difference we'll look into just `&str` and `String`.
 
@@ -343,6 +400,8 @@ First, like any respectable programmer, let's turn for help to Stack Overflow:
 https://stackoverflow.com/questions/24158114/what-are-the-differences-between-rusts-string-and-str
 
 ![String vs str](img/string_str.png)
+
+---
 
 `String`:
 
@@ -356,6 +415,8 @@ https://stackoverflow.com/questions/24158114/what-are-the-differences-between-ru
 -   A reference to memory managed by somebody else - Is a "slice" so it can
     point to any portion of the string
 -   Can be on heap, on stack, static, etc.
+
+---
 
 How they look on the inside?
 
@@ -384,6 +445,8 @@ struct &str {
 dbg!(std::mem::size_of::<&str>()); // 16
 ```
 
+---
+
 So internally they're quite different, `&str` is smaller, and they do different
 things, that's why they are different types. The same goes for the rest of
 types.
@@ -396,7 +459,9 @@ The following are analogous to `String` and `&str`:
 
 More about strings: https://fasterthanli.me/articles/working-with-strings-in-rust
 
-##### Vecs and slices
+---
+
+### Vecs and slices
 
 What about `Vec<u8>`, `[u8; N]`, `&[u8; N]`, `&[u8]`?
 
@@ -407,6 +472,8 @@ heap-allocated, latter is constant size and may be on the stack.
 
 `&[u8]` - a slice of type `u8` (so, a "view" into an array of type `u8`, either
 `Vec<u8>` or `[u8; N]`)
+
+---
 
 "Ok, what does that mean for me, which should i use?"
 
@@ -426,11 +493,13 @@ fn read_bytes(bytes: &[u8])
 fn read_string(text: &str)
 ```
 
+---
+
 But dont overthink it for now:
 
 ![API](img/api.jpg)
 
-### Big stdlib
+## Big stdlib
 
 Rust stdlib has two stdlibs:
 
@@ -439,24 +508,24 @@ Rust stdlib has two stdlibs:
 -   `std`, which is bigger, targets programs running on OSes that provide APIs
     for memory allocation, file operations, system calls, etc.
 
-### Tooling (build system, package manager, rustfmt, clippy)
+## Tooling (build system, package manager, rustfmt, clippy)
 
-## Getting started
+# Getting started
 
-### How install?
+## How install?
 
 Use rustup.rs. It lets you install multiple versions of rust. Usually you'll use
 stable but sometimes you might want to use features that are still unstable and
 available only on nightly. Also clippy and rustfmt are parts of the toolchain.
 
-#### Linux
+## Linux
 
 Install via your package manager or https://rustup.rs/ if it's not in your
 distro's repositories. The website installer will automatically prompt you to
 install the stable toolchain. If you installed rustup via package manager,
 install stable toolchain: `rustup toolchain install stable`.
 
-#### Windows
+## Windows
 
 Install via https://rustup.rs. To use MSVC backend, which is recommended, you'll
 need to have installed either Visual Studio 2015+ C++ workload or VS C++ build
@@ -464,7 +533,7 @@ tools standalone if you don't use visual studio.
 
 You can also use MinGW, but it won't be covered here.
 
-### IDE setup
+## IDE setup
 
 I personally recommend VS Code with rust-analyzer, but feel free to use
 something you're comfortable with if it's supported.
@@ -473,7 +542,7 @@ List of Rust IDEs/plugis available at: https://areweideyet.com
 
 ![](img/ides.png)
 
-#### VS Code + rust-analyzer
+## VS Code + rust-analyzer
 
 What does rust-analyzer do?
 
@@ -488,21 +557,27 @@ After you have Rust stable toolchain installed, just install the VS Code
 rust-analyzer extension. In case of difficulties, refer to the
 [manual](https://rust-analyzer.github.io/manual.html#vs-code).
 
-#### Troubleshooting
+## Troubleshooting
 
 The extension works if the root directory of Rust project is opened in VS Code
 (the folder that contains `Cargo.toml`). If you have opened a directory with
 multiple Rust projects, you'll have to manually specify paths for rust-analyzer.
 
-## Learing Rust
+# Learing Rust
 
-### Basics
+## Basics
 
-### Fearless concurrency
+Basics of Rust
 
-### Crates
+## Fearless concurrency
 
-### Other good sources
+Sharing data between different threads
+
+## Crates
+
+Crates
+
+## Other good sources
 
 -   [I am a Java, C#, C or C++ developer, time to do some
     Rust](https://fasterthanli.me/articles/i-am-a-java-csharp-c-or-cplusplus-dev-time-to-do-some-rust)
@@ -518,12 +593,12 @@ multiple Rust projects, you'll have to manually specify paths for rust-analyzer.
 -   [Learn Rust in Y minutes](https://learnxinyminutes.com/docs/rust/)
 -   [Rust Book](https://doc.rust-lang.org/book/)
 
-## Other tips
+# Other tips
 
 -   Use clone
 -   Use clippy
 
-## Sources
+# Sources
 
 -   https://fasterthanli.me
 -   https://www.youtube.com/c/fasterthanlime
