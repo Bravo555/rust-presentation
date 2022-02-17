@@ -13,7 +13,7 @@ pandoc-latex-fontsize:
     - classes: [rust]
       size: scriptsize
     - classes: [plain]
-      size: scriptsize
+      size: tiny
 ---
 
 # Why Rust
@@ -52,6 +52,17 @@ more difficult, eg. writing a linked list is challenging for a beginner.
 https://rust-unofficial.github.io/too-many-lists/
 
 ## Borrow checking
+
+In Rust you can have:
+
+-   Multiple immutable (or shared) references
+-   A single mutable (or exclusive) reference
+
+to an object.
+
+---
+
+PUT EXAMPLE HERE
 
 ### Move semantics
 
@@ -338,6 +349,426 @@ use `Box<T>`. If we want an optinal heap-allocated value, use `Option<Box<T>>`,
 [which is optimized to use only as much memory as
 `Option<T>`](https://doc.rust-lang.org/std/option/#representation).
 
+## Standard library and documentation
+
+Rust stdlib has two stdlibs:
+
+-   `core`, which is a subset of `std`, targets embedded, doesnt support
+    allocation and shit
+-   `std`, which is bigger, targets programs running on OSes that provide APIs
+    for memory allocation, file operations, system calls, etc.
+
+Use https://std.rs or https://std.rs/[search term] to search (eg.
+https://std.rs/vector searches for `vector`)
+
+For documentation of crates, use https://docs.rs
+
+## Crates.io
+
+Crates.io is a public package registry for Rust, so like npm for node. To
+install the crate to our project, we add it to `Cargo.toml` in the
+`[dependencies]` section:
+
+```
+rand = "0.8.5"
+```
+
+Or just use `cargo-edit` program:
+
+```
+$ cargo install cargo-edit
+
+$ cargo add rand
+```
+
+## Tooling (build system, package manager, rustfmt, clippy)
+
+# Getting started
+
+## How install?
+
+Use rustup.rs. It lets you install multiple versions of rust. Usually you'll use
+stable but sometimes you might want to use features that are still unstable and
+available only on nightly. Also clippy and rustfmt are parts of the toolchain.
+
+## Linux
+
+Install via your package manager or https://rustup.rs/ if it's not in your
+distro's repositories. The website installer will automatically prompt you to
+install the stable toolchain. If you installed rustup via package manager,
+install stable toolchain: `rustup toolchain install stable`.
+
+## Windows
+
+Install via https://rustup.rs. To use MSVC backend, which is recommended, you'll
+need to have installed either Visual Studio 2015+ C++ workload or VS C++ build
+tools standalone if you don't use visual studio.
+
+You can also use MinGW, but it won't be covered here.
+
+## IDE setup
+
+I personally recommend VS Code with rust-analyzer, but feel free to use
+something you're comfortable with if it's supported.
+
+List of Rust IDEs/plugis available at: https://areweideyet.com
+
+![](img/ides.png)
+
+## VS Code + rust-analyzer
+
+What does rust-analyzer do?
+
+![](img/ra1.png)
+
+-   type hinitng
+-   autocomplete
+-   jump to declaration/definition
+-   Autoapply suggestions
+
+After you have Rust stable toolchain installed, just install the VS Code
+rust-analyzer extension. In case of difficulties, refer to the
+[manual](https://rust-analyzer.github.io/manual.html#vs-code).
+
+## Troubleshooting
+
+The extension works if the root directory of Rust project is opened in VS Code
+(the folder that contains `Cargo.toml`). If you have opened a directory with
+multiple Rust projects, you'll have to manually specify paths for rust-analyzer.
+
+# Learing Rust
+
+## Basics
+
+Basics of Rust
+
+## Fearless concurrency
+
+Doing concurrency in Rust relies on `Copy`, `Send`, and `Sync` traits.
+
+Classic "parallelism is hard" example: spawn a bunch of threads that increment a
+counter.
+
+```rust
+use std::thread;
+
+fn main() {
+    let mut counter: i32 = 0;
+    let mut handles = Vec::new();
+
+    for _ in 0..4 {
+        let handle = thread::spawn(|| {
+            for _ in 0..100_000 {
+                counter += 1;
+            }
+        });
+        handles.push(handle);
+    }
+
+    // join threads before exiting the main function. Without this threads could
+    // outlive the main function and we'd get another error
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    println!("{counter}");
+}
+```
+
+---
+
+Output:
+
+```plain
+$ cargo run --example 06_thread_counter
+   Compiling rust-demo v0.1.0 (/home/marcel/Documents/dev/projects/rust-presentation/rust-demo)
+error[E0499]: cannot borrow `counter` as mutable more than once at a time
+  --> examples/06_thread_counter.rs:8:36
+   |
+8  |           let handle = thread::spawn(|| {
+   |                        -             ^^ `counter` was mutably borrowed here in the previous iteration of the loop
+   |  ______________________|
+   | |
+9  | |             for _ in 0..100_000 {
+10 | |                 counter += 1;
+   | |                 ------- borrows occur due to use of `counter` in closure
+11 | |             }
+12 | |         });
+   | |__________- argument requires that `counter` is borrowed for `'static`
+
+error[E0373]: closure may outlive the current function, but it borrows `counter`, which is owned by the current function
+  --> examples/06_thread_counter.rs:8:36
+   |
+8  |         let handle = thread::spawn(|| {
+   |                                    ^^ may outlive borrowed value `counter`
+9  |             for _ in 0..100_000 {
+10 |                 counter += 1;
+   |                 ------- `counter` is borrowed here
+   |
+note: function requires argument type to outlive `'static`
+  --> examples/06_thread_counter.rs:8:22
+   |
+8  |           let handle = thread::spawn(|| {
+   |  ______________________^
+9  | |             for _ in 0..100_000 {
+10 | |                 counter += 1;
+11 | |             }
+12 | |         });
+   | |__________^
+help: to force the closure to take ownership of `counter` (and any other referenced variables), use the `move` keyword
+   |
+8  |         let handle = thread::spawn(move || {
+   |                                    ++++
+
+Some errors have detailed explanations: E0373, E0499.
+For more information about an error, try `rustc --explain E0373`.
+error: could not compile `rust-demo` due to 2 previous errors
+```
+
+So, Rust has two problems here:
+
+-   our thread can outlive the counter
+-   can't borrow counter more than
+
+---
+
+First problem: thread can outlive the counter
+
+"But we join the thread before exiting from main, so this code should be valid!"
+
+That's right, `counter` can't go out of scope before threads finish. Why the
+error then?
+
+---
+
+![https://doc.rust-lang.org/stable/std/thread/fn.spawn.html](img/thread_spawn.png)
+
+`F: Send + 'static` means that variables borrowed by `F` have to be `Send` and
+`'static`.
+
+---
+
+-   `Send`: Need to be able to send stuff to the thread. Pretty self
+    explanatory. Is `i32: Send`?
+
+    ![https://doc.rust-lang.org/stable/std/primitive.i32.html#impl-Send](img/i32_send.png){width=50%}
+
+    You bet.
+
+---
+
+-   `'static`: Data has to have `'static` lifetime, which is to say, it needs to
+    live for the entire duration of the program
+
+    In theory it shouldn't be necessary. There are ways to spawn the thread
+    which do not require this. The `crossbeam` crate provides the scoped thread
+    spawning function.
+
+    Also, scoped threads will be added to standard library in the future:
+
+    ![scoped threads](img/scoped_threads.png){width=50%}
+
+---
+
+For now, we will just make `counter` a static:
+
+```rust
+static mut COUNTER: i32 = 0;
+
+fn main() {
+    // ...
+}
+```
+
+```plain
+$ cargo run --example 06_thread_counter
+   Compiling rust-demo v0.1.0 (/home/marcel/Documents/dev/projects/rust-presentation/rust-demo)
+error[E0133]: use of mutable static is unsafe and requires unsafe function or block
+  --> examples/06_thread_counter.rs:11:17
+   |
+11 |                 COUNTER += 1;
+   |                 ^^^^^^^^^^^^ use of mutable static
+   |
+   = note: mutable statics can be mutated by multiple threads: aliasing violations or data races will cause undefined behavior
+
+For more information about this error, try `rustc --explain E0133`.
+error: could not compile `rust-demo` due to previous error
+```
+
+---
+
+The cursed fix: add `unsafe`:
+
+```rust
+let handle = thread::spawn(|| {
+fn main() {
+    // ...
+
+    for _ in 0..100_000 {
+        unsafe {
+            COUNTER += 1;
+        }
+    }
+
+    // ...
+
+    unsafe {
+        println!("{COUNTER}");
+    }
+}
+
+```
+
+```plain
+$ cargo run --example 06_thread_counter
+    Finished dev [unoptimized + debuginfo] target(s) in 0.00s
+     Running `target/debug/examples/06_thread_counter`
+354443
+```
+
+The usual ensues...
+
+---
+
+Now make it good.
+
+We will sync access to the counter with a Mutex.
+
+```rust
+use std::{sync::Mutex, thread};
+
+static COUNTER: Mutex<i32> = Mutex::new(0);
+
+fn main() {
+    let mut handles = Vec::new();
+
+    for _ in 0..4 {
+        let handle = thread::spawn(|| {
+            for _ in 0..100_000 {
+                let mut guard = COUNTER.lock().unwrap();
+                *guard += 1;
+            }
+        });
+        handles.push(handle);
+    }
+
+    // join threads before exiting the main function.
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    let counter = COUNTER.lock().unwrap();
+    println!("{counter}");
+}
+```
+
+---
+
+Output:
+
+```plain
+$ cargo run --example 06_thread_counter
+   Compiling rust-demo v0.1.0 (/home/marcel/Documents/dev/projects/rust-presentation/rust-demo)
+error[E0015]: calls in statics are limited to constant functions, tuple structs and tuple variants
+ --> examples/06_thread_counter.rs:3:30
+  |
+3 | static COUNTER: Mutex<i32> = Mutex::new(0);
+  |                              ^^^^^^^^^^^^^
+
+For more information about this error, try `rustc --explain E0015`.
+error: could not compile `rust-demo` due to previous error
+```
+
+Rust disallows running functions for static variables.
+
+---
+
+Solution: use reference counting for shared ownership.
+
+```rust
+use std::{
+    sync::{Arc, Mutex},
+    thread,
+};
+
+fn main() {
+    // wrap the mutex in an Atomic Reference Counter
+    let counter: Arc<Mutex<i32>> = Arc::new(Mutex::new(0));
+    let mut handles = Vec::new();
+
+    for _ in 0..4 {
+        // clone the reference counter. Clone is &T -> T, so now we can move
+        // the refcounter inside the closure
+        let c = Arc::clone(&counter);
+        let handle = thread::spawn(move || {
+            for _ in 0..100_000 {
+                let mut guard = c.lock().unwrap();
+                *guard += 1;
+            }
+        });
+        handles.push(handle);
+    }
+
+    // join threads before exiting the main function.
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    let counter = counter.lock().unwrap();
+    println!("{counter}");
+}
+```
+
+---
+
+Output:
+
+```plain
+$ cargo run --example 06_thread_counter
+   Compiling rust-demo v0.1.0 (/home/marcel/Documents/dev/projects/rust-presentation/rust-demo)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.20s
+     Running `target/debug/examples/06_thread_counter`
+400000
+```
+
+This is correct!
+
+For scoped threads and comparisons to Go, see [Some mistakes Rust doesn't
+catch](https://fasterthanli.me/articles/some-mistakes-rust-doesnt-catch)
+
+## Async
+
+## Other good sources
+
+-   [I am a Java, C#, C or C++ developer, time to do some
+    Rust](https://fasterthanli.me/articles/i-am-a-java-csharp-c-or-cplusplus-dev-time-to-do-some-rust)
+
+    Comprehensive introduction to Rust for developers of other Object Oriented
+    languages
+
+-   [Declarative memory
+    management](https://fasterthanli.me/articles/declarative-memory-management)
+
+    How Rust memory management differs from C or C++
+
+-   [Learn Rust in Y minutes](https://learnxinyminutes.com/docs/rust/)
+-   [Rust Book](https://doc.rust-lang.org/book/)
+
+# Other tips
+
+-   Use clone
+-   Use clippy
+
+# Sources
+
+-   https://fasterthanli.me
+-   https://www.youtube.com/c/fasterthanlime
+-   https://www.youtube.com/c/JonGjengset
+-   https://pkolaczk.github.io
+-   https://www.reddit.com/r/rustjerk
+
+# Bonus
+
 ## Owned vs borrowed types
 
 ![strings](img/strings.jpg)
@@ -498,110 +929,3 @@ fn read_string(text: &str)
 But dont overthink it for now:
 
 ![API](img/api.jpg)
-
-## Big stdlib
-
-Rust stdlib has two stdlibs:
-
--   `core`, which is a subset of `std`, targets embedded, doesnt support
-    allocation and shit
--   `std`, which is bigger, targets programs running on OSes that provide APIs
-    for memory allocation, file operations, system calls, etc.
-
-## Tooling (build system, package manager, rustfmt, clippy)
-
-# Getting started
-
-## How install?
-
-Use rustup.rs. It lets you install multiple versions of rust. Usually you'll use
-stable but sometimes you might want to use features that are still unstable and
-available only on nightly. Also clippy and rustfmt are parts of the toolchain.
-
-## Linux
-
-Install via your package manager or https://rustup.rs/ if it's not in your
-distro's repositories. The website installer will automatically prompt you to
-install the stable toolchain. If you installed rustup via package manager,
-install stable toolchain: `rustup toolchain install stable`.
-
-## Windows
-
-Install via https://rustup.rs. To use MSVC backend, which is recommended, you'll
-need to have installed either Visual Studio 2015+ C++ workload or VS C++ build
-tools standalone if you don't use visual studio.
-
-You can also use MinGW, but it won't be covered here.
-
-## IDE setup
-
-I personally recommend VS Code with rust-analyzer, but feel free to use
-something you're comfortable with if it's supported.
-
-List of Rust IDEs/plugis available at: https://areweideyet.com
-
-![](img/ides.png)
-
-## VS Code + rust-analyzer
-
-What does rust-analyzer do?
-
-![](img/ra1.png)
-
--   type hinitng
--   autocomplete
--   jump to declaration/definition
--   Autoapply suggestions
-
-After you have Rust stable toolchain installed, just install the VS Code
-rust-analyzer extension. In case of difficulties, refer to the
-[manual](https://rust-analyzer.github.io/manual.html#vs-code).
-
-## Troubleshooting
-
-The extension works if the root directory of Rust project is opened in VS Code
-(the folder that contains `Cargo.toml`). If you have opened a directory with
-multiple Rust projects, you'll have to manually specify paths for rust-analyzer.
-
-# Learing Rust
-
-## Basics
-
-Basics of Rust
-
-## Fearless concurrency
-
-Sharing data between different threads
-
-## Crates
-
-Crates
-
-## Other good sources
-
--   [I am a Java, C#, C or C++ developer, time to do some
-    Rust](https://fasterthanli.me/articles/i-am-a-java-csharp-c-or-cplusplus-dev-time-to-do-some-rust)
-
-    Comprehensive introduction to Rust for developers of other Object Oriented
-    languages
-
--   [Declarative memory
-    management](https://fasterthanli.me/articles/declarative-memory-management)
-
-    How Rust memory management differs from C or C++
-
--   [Learn Rust in Y minutes](https://learnxinyminutes.com/docs/rust/)
--   [Rust Book](https://doc.rust-lang.org/book/)
-
-# Other tips
-
--   Use clone
--   Use clippy
-
-# Sources
-
--   https://fasterthanli.me
--   https://www.youtube.com/c/fasterthanlime
--   https://www.youtube.com/c/JonGjengset
--   https://pkolaczk.github.io
--   https://www.reddit.com/r/rustjerk

@@ -7,4 +7,3 @@ presentation:
 	--columns=72 \
 	--wrap=auto \
 	-f markdown+implicit_figures \
-	-f markdown+hard_line_breaks
